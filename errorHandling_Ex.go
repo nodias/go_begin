@@ -18,12 +18,12 @@ const (
 	UNSTABLE = 3
 )
 
-func main() {
-	err := myFunc(UNSTABLE)
-	if err != nil {
-		errorHandler(err)
-	}
-}
+// func main() {
+// 	err := myFunc(UNSTABLE)
+// 	if err != nil {
+// 		errorHandler(err)
+// 	}
+// }
 
 func errorHandler(err error) {
 	switch err.(type) {
