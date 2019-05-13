@@ -1,8 +1,8 @@
 package main
 
-func main() {
-	a()
-}
+// func main() {
+// 	a()
+// }
 
 func a() {
 	var arr = [2]string{"t", "t2"} //array, slice, map을 각각 선언
