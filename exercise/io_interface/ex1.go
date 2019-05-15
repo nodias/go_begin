@@ -2,44 +2,97 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"os"
 )
 
 func main() {
-	ex2()
+	data := FileRead("helloJson.json")
+	jsonData := map[string]interface{}{}
+	jsonByte := []byte{}
+	json.Unmarshal(data, &jsonData)
+	fmt.Println(jsonData["you"])
+	fmt.Println(jsonData["me"])
+	jsonByte, _ = json.Marshal(jsonData)
+	fmt.Println(string(jsonByte))
 }
 
+// FileWrite is write to file
+func FileWrite(fileAddr string, wordsToWrite string) {
+	file, _, err := Open(fileAddr, os.O_APPEND)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-func ex2(){
-	file, err := os.OpenFile("hello.txt")
+	err = WriteTo(file, wordsToWrite)
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func ex() {
-	file, err := os.OpenFile(
-		"hello.txt", os.O_CREATE|os.O_RDWR|os.O_TRUNC, os.FileMode(0644),
-	)
+// FileRead is return []byte
+func FileRead(fileAddr string) []byte {
+	file, fileInfo, err := Open(fileAddr, os.O_APPEND)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
-	defer file.Close()
 
-	w := bufio.NewWriter(file)
-	w.WriteString("Hello, world!")
-	w.Flush()
+	fileSize := fileInfo.Size()
+	b := make([]byte, fileSize)
 
-	r := bufio.NewReader(file)
-	fi, _ := file.Stat()
-	b := make([]byte, fi.Size())
-	n, err := r.Read(b)
+	err = ReadFrom(file, b)
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
-	file.Seek(0, os.SEEK_SET)
-	fmt.Println(n, "buffer를 읽었습니다.")
-	r.Read(b)
+	fmt.Println("content : ", string(b))
+	return b
+}
 
-	fmt.Println(string(b))
+// Open is open file
+func Open(fileAddr string, liveOrDead int) (*os.File, os.FileInfo, error) {
+	f, err := os.OpenFile(fileAddr, os.O_CREATE|os.O_RDWR|liveOrDead, os.FileMode(0644))
+	if err != nil {
+		log.Println("failure to open")
+		return nil, nil, err
+	}
+	fstat, err := f.Stat()
+	if err != nil {
+		log.Println("failure to load fileInfo")
+		return nil, nil, err
+	}
+	return f, fstat, err
+}
+
+// WriteTo is write
+func WriteTo(iw io.Writer, s string) error {
+	if s == "" || iw == nil {
+		log.Fatal("nil")
+	}
+	w := bufio.NewWriter(iw)
+	n, _ := w.Write([]byte(s))
+	err := w.Flush()
+	if err != nil {
+		log.Println("failure to write")
+		return err
+	}
+	log.Println(n, "success to write")
+	return nil
+}
+
+// ReadFrom is read
+func ReadFrom(ir io.Reader, b []byte) error {
+	if b == nil || ir == nil {
+		log.Fatal("nil")
+	}
+	w := bufio.NewReader(ir)
+	n, err := w.Read(b)
+	if err != nil {
+		log.Println("failure to read")
+		return err
+	}
+	log.Println(n, "success to read")
+	return nil
 }
