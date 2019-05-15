@@ -3,6 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"os"
 )
 
 func main() {
@@ -26,7 +28,10 @@ func ex1() {
 	b, _ := json.Marshal(persons)
 	fmt.Println(string(b))
 
-	var jsonPersons = new(Person)
+	var jsonPersons = new([]Person)
 	json.Unmarshal(b, jsonPersons)
-	fmt.Printf("%v", jsonPersons)
+
+	ioutil.WriteFile("easyJsonSample.json", b, os.FileMode(0644))
+	x, _ := ioutil.ReadFile("easyJsonSample.json")
+	fmt.Println(string(x))
 }
