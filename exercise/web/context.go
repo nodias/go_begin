@@ -3,7 +3,7 @@ package main
 import "net/http"
 
 type Context struct {
-	Params         map[string]string
+	Params         map[string]interface{}
 	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 }

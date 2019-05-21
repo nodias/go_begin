@@ -13,7 +13,6 @@ type router struct {
 }
 
 func (r *router) HandleFunc(method, pattern string, h HandlerFunc) {
-	log.Println("# HandleFunc")
 	// http 메서드로 등록된 맵이 있는지 확인
 	m, ok := r.handlers[method]
 	if !ok {
@@ -26,11 +25,19 @@ func (r *router) HandleFunc(method, pattern string, h HandlerFunc) {
 }
 
 func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	log.Println("# ServeHTTP")
 	// http 메서드에 맞는 모든 handers를 반복하면서 요청 URL에 해당하는 handler를 찾음
 	for pattern, handlerF := range r.handlers[req.Method] {
 		if ok, params := match(pattern, req.URL.Path); ok {
-			context := Context{params, w, req}
-			handlerF(&context)
+			c := Context{
+				Params:         make(map[string]interface{}),
+				ResponseWriter: w,
+				Request:        req,
+			}
+			for k, v := range params {
+				params[k] = v
+			}
+			handlerF(&c)
 			return
 		}
 	}
@@ -43,13 +50,13 @@ func match(pattern, path string) (bool, map[string]string) {
 	if pattern == path {
 		return true, nil
 	}
+
 	patterns := strings.Split(pattern, "/")
 	paths := strings.Split(path, "/")
 
 	if len(patterns) != len(paths) {
 		return false, nil
 	}
-
 	params := make(map[string]string)
 
 	for i := 0; i < len(patterns); i++ {
