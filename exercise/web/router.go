@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"net/http"
 	"strings"
 )
@@ -24,27 +23,46 @@ func (r *router) HandleFunc(method, pattern string, h HandlerFunc) {
 	m[pattern] = h
 }
 
-func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	log.Println("# ServeHTTP")
-	// http 메서드에 맞는 모든 handers를 반복하면서 요청 URL에 해당하는 handler를 찾음
-	for pattern, handlerF := range r.handlers[req.Method] {
-		if ok, params := match(pattern, req.URL.Path); ok {
-			c := Context{
-				Params:         make(map[string]interface{}),
-				ResponseWriter: w,
-				Request:        req,
+func (r *router) handler() HandlerFunc {
+	return func(c *Context) {
+		//http 메서드에 맞는 모든 handers를 반복하며 요청 URL에 해당하는 handler를 찾음
+		for pattern, handler := range r.handlers[c.Request.Method] {
+			if ok, params := match(pattern, c.Request.URL.Path); ok {
+				for k, v := range params {
+					c.Params[k] = v
+				}
+				// 요청 URL에 해당하는 handler 수행
+				handler(c)
+				return
 			}
-			for k, v := range params {
-				params[k] = v
-			}
-			handlerF(&c)
-			return
 		}
+		// 요청 URL에 해당하는 handler를 찾지 못하면 NotFound 에러 처리
+		http.NotFound(c.ResponseWriter, c.Request)
+		return
 	}
-	// 요청 URL에 해당하는 handler 수행
-	http.NotFound(w, req)
-	return
 }
+
+// func (r *router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+// 	log.Println("# ServeHTTP")
+// 	// http 메서드에 맞는 모든 handers를 반복하면서 요청 URL에 해당하는 handler를 찾음
+// 	for pattern, handlerF := range r.handlers[req.Method] {
+// 		if ok, params := match(pattern, req.URL.Path); ok {
+// 			c := Context{
+// 				Params:         make(map[string]interface{}),
+// 				ResponseWriter: w,
+// 				Request:        req,
+// 			}
+// 			for k, v := range params {
+// 				params[k] = v
+// 			}
+// 			handlerF(&c)
+// 			return
+// 		}
+// 	}
+// 	// 요청 URL에 해당하는 handler 수행
+// 	http.NotFound(w, req)
+// 	return
+// }
 
 func match(pattern, path string) (bool, map[string]string) {
 	if pattern == path {

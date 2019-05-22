@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+type Middleware func(next HandlerFunc) HandlerFunc
+
 func logHandler(next HandlerFunc) HandlerFunc {
 	return func(c *Context) {
 		//next(c)를 실행하기 전에 현재 시간을 기록
