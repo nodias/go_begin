@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -29,15 +30,15 @@ func (u *User) Refresh() {
 	u.Expired = time.Now().Add(sessionDuration)
 }
 
-func GetCurrentUser(r *http.Request) *User {
-	session := sessions.GetSession(r)
-	data := session.Get(currentUserKey).([]byte)
+func GetCurrentUser(r *http.Request) (u *User) {
+	var session sessions.Session
+	session = sessions.GetSession(r)
+	data := session.Get(currentUserKey)
 	if data != nil {
-		return nil
+		json.Unmarshal(data.([]byte), &u)
+		return
 	}
-	var u User
-	json.Unmarshal(data, &u)
-	return &u
+	return
 }
 
 func SetCurrentUser(r *http.Request, u *User) {
@@ -47,4 +48,13 @@ func SetCurrentUser(r *http.Request, u *User) {
 	session := sessions.GetSession(r)
 	val, _ := json.Marshal(u)
 	session.Set(currentUserKey, val)
+}
+
+func DeleteCurrentUser(r *http.Request, u *User) {
+	if u != nil {
+		sessions.GetSession(r).Delete(currentUserKey)
+		return
+	}
+	log.Println("There is no user")
+	return
 }

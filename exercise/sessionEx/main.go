@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/goincremental/negroni-sessions/cookiestore"
@@ -17,8 +18,6 @@ var dbid = "myid"
 var dbpw = "password"
 var sessionSecret = "sessionSecret"
 var sessionKey = "sessionKey"
-var userSession = "myidssession"
-var userSessionVal = "userSessionVal"
 
 func init() {
 	renderer = render.New()
@@ -27,32 +26,46 @@ func init() {
 func main() {
 	//router
 	router := mux.NewRouter()
+
+	//index Page
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		session := sessions.GetSession(r)
-		if sessionVal := session.Get(userSession); sessionVal == userSessionVal {
-			renderer.HTML(w, http.StatusOK, "index", map[string]string{"message": "환영합니다."})
+		user := GetCurrentUser(r)
+		if user == nil {
+			http.Redirect(w, r, "/login", http.StatusFound)
 			return
 		}
-		http.Redirect(w, r, "/login", http.StatusFound)
+		renderer.HTML(w, http.StatusOK, "index", map[string]string{"userId": user.Uid})
+		return
 	})
 
+	//login Page
 	router.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 		renderer.HTML(w, http.StatusOK, "login", map[string]string{"message": "login이 필요합니다."})
 	}).Methods("GET")
 
+	//login POST
 	router.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		id := r.FormValue("username")
-		pw := r.FormValue("password")
-		if id == dbid && pw == dbpw {
-			//upload session
-			session := sessions.GetSession(r)
-			session.Set(userSession, userSessionVal)
-			//redirect
+		userId := r.FormValue("userId")
+		password := r.FormValue("password")
+		if userId == dbid && password == dbpw {
+			log.Println("login Success")
+			user := User{Uid: userId}
+			SetCurrentUser(r, &user)
 			http.Redirect(w, r, "/", http.StatusFound)
 			return
 		}
-		renderer.HTML(w, http.StatusOK, "login", map[string]string{"message": "ip 혹은 pw가 틀렸습니다."})
+		log.Println("login Fail")
+		renderer.HTML(w, http.StatusOK, "login", map[string]string{"message": "아이디 또는 암호를 확인하세요."})
+		return
 	}).Methods("POST")
+
+	router.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+		user := GetCurrentUser(r)
+		if user != nil {
+			DeleteCurrentUser(r, user)
+		}
+		http.Redirect(w, r, "/login", http.StatusFound)
+	}).Methods("GET")
 
 	//middleware
 	n := negroni.Classic()
