@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/goincremental/negroni-sessions/cookiestore"
 
@@ -14,6 +15,7 @@ import (
 )
 
 var renderer *render.Render
+var expirationTime = time.Now().Add(1 * time.Minute)
 
 const (
 	sessionKey    = "mysession"
@@ -34,6 +36,7 @@ func main() {
 	router.GET("/index", IndexHandler)
 	router.GET("/login", LoginHandler)
 	router.GET("/logout", LogoutHandler)
+	router.GET("/cookie", CookieTestHandler)
 
 	//negroni
 	n := negroni.Classic()
@@ -68,5 +71,15 @@ func LogoutHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Param
 	log.Println("### LogoutHandler")
 	session := sessions.GetSession(req)
 	session.Delete("sessionkey")
+	http.Redirect(w, req, "/index", http.StatusFound)
+}
+
+func CookieTestHandler(w http.ResponseWriter, req *http.Request, ps httprouter.Params) {
+	log.Println("### CookieTestHandler")
+	http.SetCookie(w, &http.Cookie{
+		Name:    "token",
+		Value:   "tokenstring",
+		Expires: expirationTime,
+	})
 	http.Redirect(w, req, "/index", http.StatusFound)
 }
