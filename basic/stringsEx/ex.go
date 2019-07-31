@@ -1,4 +1,4 @@
-package main
+package stringsEx
 
 import (
 	"encoding/json"

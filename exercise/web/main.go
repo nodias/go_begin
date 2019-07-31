@@ -101,7 +101,7 @@ func CheckLoogin(username, password string) bool {
 
 // 인증 토큰 생성
 func Sign(message string) string {
-	secretKey := []byte("golang-book-secret-key")
+	secretKey := []byte("golang-book_discoveryGO-secret-key")
 	if len(secretKey) == 0 {
 		return ""
 	}

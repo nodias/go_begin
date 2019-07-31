@@ -2,7 +2,7 @@ package main
 
 import "fmt"
 
-func c() {
+func b() {
+	num = 7
 	fmt.Println(num)
-	num = 66
 }
