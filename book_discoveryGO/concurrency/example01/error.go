@@ -1,9 +1,13 @@
 package main
 
-import "log"
+import (
+	"fmt"
+	"log"
+)
 
 func recoverPanic (){
 	if r := recover(); r != nil {
+		fmt.Println("panic occured")
 		log.Fatal(r)
 	}
 }

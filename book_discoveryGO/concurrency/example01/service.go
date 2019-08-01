@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"io"
 	"net/http"
 	"net/url"
@@ -27,7 +28,24 @@ func download(url string) (string, error) {
 }
 
 func writeZip(outFilename string, filenames []string) error {
-	return nil
+	outf, err := os.Create(outFilename)
+	if err != nil {
+		return err
+	}
+	zw := zip.NewWriter(outf)
+	for _, filename := range filenames{
+		w, err := zw.Create(filename)
+		if err != nil {
+			return err
+		}
+		f, err := os.Open(filename)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		Must(io.Copy(w, f))
+	}
+	return zw.Close()
 }
 
 func urlToFilename(rawurl string) (string, error) {
