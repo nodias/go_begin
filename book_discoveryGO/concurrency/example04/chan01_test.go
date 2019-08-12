@@ -110,3 +110,50 @@ func Example_test4() {
 	//Output:
 	//
 }
+
+func Example_test5() {
+	ch := make(chan int, 2)
+	done := make(chan bool)
+	//go routine 속의 <-chan 은 기다려지지 않기에 wait이 필요하다.
+	go func() {
+		ch <- 9
+	}()
+	close(ch)
+	go func() {
+		fmt.Println(<-ch)
+		done<-true
+	}()
+	<-done
+
+	//Output:
+	//
+}
+
+func Example_test6() {
+	ch := make(chan int, 2)
+	ch2 := make(chan string, 2)
+	done := make(chan bool)
+	//go routine 속의 <-chan 은 기다려지지 않기에 wait이 필요하다.
+	//close 후에는 받는 것만 가능, stack소모 후 받게 되면 0, "" 등 빈값 출력
+	//close(ch2)
+	ch2<-"wow"
+	a, b := <-ch2
+	fmt.Println(a)
+	fmt.Println(b)
+
+	go func() {
+		ch <- 9
+		close(ch)
+	}()
+
+	go func() {
+		fmt.Println(<-ch)
+		fmt.Println(<-ch)
+		//ch<-1
+		done<-true
+	}()
+	<-done
+
+	//Output:
+	//
+}
