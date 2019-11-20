@@ -1,13 +1,21 @@
 package mashaller
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 )
 
-type telecom int
+type Telecom int
 
-func (t telecom) String() string {
+const (
+	Default Telecom = iota
+	SKT
+	KTF
+	LGU
+)
+
+func (t Telecom) String() string {
 	switch t {
 	case Default:
 		return "Default"
@@ -22,22 +30,23 @@ func (t telecom) String() string {
 	}
 }
 
+type TelecomVehicle int
+
 const (
-	Default telecom = iota
-	SKT
-	KTF
-	LGU
+	VehicleSKT TelecomVehicle = iota
+	VehicleKTF
+	VehicleLGU
 )
 
-func (t telecom) MarshalJSON() ([]byte, error) {
+func (t Telecom) MarshalJSON() ([]byte, error) {
 	data := t.String()
 	if data == "" {
-		return nil, errors.New("telecom.MarshalJSON: unknown value")
+		return nil, errors.New("Telecom.MarshalJSON: unknown value")
 	}
 	return []byte(fmt.Sprintf(`"%s"`, t.String())), nil
 }
 
-func (t *telecom) UnmarshalJSON(data []byte) error {
+func (t *Telecom) UnmarshalJSON(data []byte) error {
 	switch string(data) {
 	case "\"Default\"":
 		*t = Default
@@ -48,19 +57,19 @@ func (t *telecom) UnmarshalJSON(data []byte) error {
 	case "\"LGU\"":
 		*t = LGU
 	default:
-		return errors.New("telecom.UnmarshalJSON: unknown value")
+		return errors.New("Telecom.UnmarshalJSON: unknown value")
 	}
 	return nil
 }
 
 type TelecomCd struct {
-	Telecom     telecom `json:"telecom,omitempty"`
-	TelecomTemp int     `json:"telecomTemp,omitempty"`
+	Telecom        Telecom        `json:"telecom,omitempty"`
+	TelecomVehicle TelecomVehicle `json:"telecomVehicle,omitempty"`
 }
 
 func (t TelecomCd) MarshalJSON() ([]byte, error) {
 	if t.Telecom == Default {
-		switch t.TelecomTemp {
+		switch t.TelecomVehicle {
 		case 0:
 			t.Telecom = SKT
 			break
@@ -78,8 +87,37 @@ func (t TelecomCd) MarshalJSON() ([]byte, error) {
 	return t.Telecom.MarshalJSON()
 }
 
-func (t TelecomCd) UnmarshalJSON([]byte) error {
-return nil
+func (t *TelecomCd) UnmarshalJSON(b []byte) error {
+	var v interface{}
+	err := json.Unmarshal(b, &v)
+	if err != nil {
+		return err
+	}
+
+	switch data := v.(type) {
+	case string:
+		err = t.Telecom.UnmarshalJSON(b)
+		if err != nil {
+			return err
+		}
+		t.TelecomVehicle = TelecomVehicle(int(t.Telecom) - 1)
+		return nil
+	case map[string]interface{}:
+		telecom, ok := data["telecom"]
+		if ok {
+			err = t.Telecom.UnmarshalJSON([]byte(fmt.Sprintf(`"%s"`, telecom.(string))))
+			if err != nil {
+				return err
+			}
+			t.TelecomVehicle = TelecomVehicle(int(t.Telecom) - 1)
+		} else {
+			t.TelecomVehicle = TelecomVehicle(data["telecomVehicle"].(float64))
+			t.Telecom = Telecom(t.TelecomVehicle +1)
+		}
+		return nil
+	default:
+		return nil
+	}
 }
 
 type User struct {
